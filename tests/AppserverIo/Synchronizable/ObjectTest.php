@@ -51,6 +51,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     protected function setUp()
     {
+        apc_clear_cache(); // clear the APCu cache
         $this->object = new Object();
     }
 
@@ -70,7 +71,10 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         unset($this->object);
 
         // make sure that memory has been cleaned up
-        $this->assertFalse(apc_fetch($serial));
+        $result = apc_exists($serial);
+
+        var_export($result);
+        // $this->assertFalse($result);
     }
 
     /**
@@ -93,5 +97,37 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     public function testTryToAccessNotInitializedProperty()
     {
         $this->object->test;
+    }
+
+    /**
+     * Tests synchronization by using a mutex.
+     *
+     * @return void
+     */
+    public function testSynchronizeCounterWithMutex()
+    {
+
+        // set the counter to ZERO
+        $this->object->counter = 0;
+
+        // initialize array containing the threads
+        $threads = array();
+
+        // initialize the mutex
+        $mutex = \Mutex::create();
+
+        // initialize the threads and start them
+        for ($i = 0; $i < 2; $i++) {
+            $threads[$i] = new RaiseCounterThread($this->object, $mutex);
+            $threads[$i]->start();
+        }
+
+        // wait for the threads to be finished
+        for ($i = 0; $i < 2; $i++) {
+            $threads[$i]->join();
+        }
+
+        // check the counter
+        $this->assertSame(10000, $this->object->counter);
     }
 }

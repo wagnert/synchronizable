@@ -69,7 +69,7 @@ class Object implements SynchronizableInterface
 
         // store both in APCu
         if (apc_store($this->serial, serialize(array())) === false) {
-            throw new \Exception(sprintf('Cant initialize instance of %s', get_class($this)));
+            throw new \Exception(sprintf('Cant initialize data for %s (%s) instance', get_class($this)), $this->serial);
         }
     }
 
@@ -83,7 +83,9 @@ class Object implements SynchronizableInterface
     {
         $this->refCount--; // we destroy a copy here
         if ($this->refCount === 0) {
-            apc_delete($this->serial);
+            if (apc_delete($this->serial) === false) {
+                throw new \Exception('Can\'t delete data for %s (%s) instance', get_class($this), $this->serial);
+            }
         }
     }
 
@@ -165,6 +167,6 @@ class Object implements SynchronizableInterface
      */
     public function __sleep()
     {
-        return array('serial', 'zval');
+        return array('serial', 'refCount');
     }
 }
