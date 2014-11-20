@@ -69,8 +69,11 @@ class ArrayObjectTest extends \PHPUnit_Framework_TestCase
         // unset the object
         unset($this->arrayObject);
 
+        // load the iterator for the object properties
+        $iterator = new \ApcIterator('user', '/^' . $serial . '\./');
+
         // make sure that memory has been cleaned up
-        $this->assertFalse(apc_fetch($serial));
+        $this->assertSame(0, $iterator->getTotalCount());
     }
 
     /**

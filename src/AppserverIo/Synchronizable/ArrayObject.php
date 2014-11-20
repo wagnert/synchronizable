@@ -36,36 +36,93 @@ namespace AppserverIo\Synchronizable;
 class ArrayObject extends Object implements \ArrayAccess
 {
 
+    /**
+     * Constructor that'll initialize the synchronizable object.
+     */
+    public function __construct()
+    {
+
+        // actually we're using APCu to store the object properties
+        parent::__construct();
+
+        // initialize the property with the items
+        $this->__set('items', array());
+    }
+
+    /**
+     * Assigns a value to the specified offset.
+     *
+     * @param mixed $offset The offset to assign the value to
+     * @param mixed $value  The value to set
+     *
+     * @return void
+     * @see \ArrayAccess::offsetSet()
+     * @link http://php.net/manual/en/arrayaccess.offsetset.php
+     */
     public function offsetSet($offset, $value)
     {
 
-        $data = unserialize(apc_fetch($this->serial));
+        // load the property with the items data
+        $data = $this->__get('items');
 
+        // add the data depending an offset has been passed or not
         if (is_null($offset)) {
             $data[] = $value;
         } else {
             $data[$offset] = $value;
         }
 
-        apc_store($this->serial, serialize($data));
+        // store the data back to the property
+        $this->__set('items', $data);
     }
 
+    /**
+     * Whether or not an offset exists.
+     *
+     * This method is executed when using isset() or empty() on objects implementing ArrayAccess.
+     *
+     * @param mixed $offset An offset to check for
+     *
+     * @return bool Returns TRUE on success or FALSE on failure.
+     * @see \ArrayAccess::offsetExists()
+     * @link http://php.net/manual/en/arrayaccess.offsetexists.php
+     */
     public function offsetExists($offset)
     {
-        $data = unserialize(apc_fetch($this->serial));
+        $data = $this->__get('items');
         return isset($data[$offset]);
     }
 
+    /**
+     * Unsets an offset.
+     *
+     * @param mixed $offset The offset to unset
+     *
+     * @return void
+     * @see \ArrayAccess::offsetUnset()
+     * @link http://php.net/manual/en/arrayaccess.offsetunset.php
+     */
     public function offsetUnset($offset)
     {
-        $data = unserialize(apc_fetch($this->serial));
+        $data = $this->__get('items');
         unset($data[$offset]);
-        apc_store($this->serial, serialize($data));
+        $this->__set('items', $data);
     }
 
+    /**
+     * Returns the value at specified offset.
+     *
+     * This method is executed when checking if offset is empty().
+     *
+     * @param mixed $offset The offset to retrieve
+     *
+     * @return mixed The value
+     * @see \ArrayAccess::offsetGet()
+     * @link http://php.net/manual/en/arrayaccess.offsetget.php
+     */
     public function offsetGet($offset)
     {
-        $data = unserialize(apc_fetch($this->serial));
+        $data = $this->__get('items');
         return isset($data[$offset]) ? $data[$offset] : null;
     }
 }

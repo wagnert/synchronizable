@@ -66,11 +66,6 @@ class Object implements SynchronizableInterface
         // initialize the serial and the reference counter
         $this->serial = uniqid();
         $this->refCount++;
-
-        // store both in APCu
-        if (apc_store($this->serial, serialize(array())) === false) {
-            throw new \Exception(sprintf('Cant initialize data for %s (%s) instance', get_class($this)), $this->serial);
-        }
     }
 
     /**
@@ -83,8 +78,11 @@ class Object implements SynchronizableInterface
     {
         $this->refCount--; // we destroy a copy here
         if ($this->refCount === 0) {
-            if (apc_delete($this->serial) === false) {
-                throw new \Exception('Can\'t delete data for %s (%s) instance', get_class($this), $this->serial);
+            $iterator = new \ApcIterator('user', '/^' . $this->serial . '\./');
+            foreach ($iterator as $key => $value) {
+                if (apc_delete($key) === false) {
+                    throw new \Exception('Can\'t delete property for %s::%s (%s) instance', get_class($this), $key, $this->serial);
+                }
             }
         }
     }
@@ -110,15 +108,19 @@ class Object implements SynchronizableInterface
     }
 
     /**
+     * Stores the object propery with the passed data.
      *
-     * @param unknown $name
-     * @param unknown $value
+     * @param string $name  The property name
+     * @param mixed  $value The property value
+     *
+     * @return void
+     * @throws \Exception Is thrown if the property data can't be stored to APCu
      */
     public function __set($name, $value)
     {
-        $data = unserialize(apc_fetch($this->serial));
-        $data[$name] = $value;
-        apc_store($this->serial, serialize($data));
+        if (apc_store($this->serial . '.' . $name, serialize($value)) === false) { // throw an exception if data can't be stored to APCu
+            throw new \Exception(sprintf('Can\'t store data for property: %s::%s', __CLASS__, $name));
+        }
     }
 
     /**
@@ -132,21 +134,20 @@ class Object implements SynchronizableInterface
     public function __get($name)
     {
 
-        // load the data from APCu
-        if ($rawData = apc_fetch($this->serial)) {
+        // try to load the data from APCu
+        $rawData = apc_fetch($this->serial . '.' . $name);
+        if ($rawData === false) { // throw an exception if data can't be loaded from APCu
+            throw new \Exception(sprintf('Can\'t load data for property: %s::%s', __CLASS__, $name));
+        }
 
-            // unserialize data and check if property is set
-            $data = unserialize($rawData);
-            if (is_array($data) && isset($data[$name])) {
-                return $data[$name];
-            }
-
-            // throw an exception if property is not set or data can't be resolve
+        // unserialize data and check if property is set
+        $data = unserialize($rawData);
+        if ($data === false) { // throw an exception if property is not set or data can't be resolve
             throw new \Exception(sprintf('Undefined property: %s::%s', __CLASS__, $name));
         }
 
-        // throw an exception if data can't be loaded from APCu
-        throw new \Exception(sprintf('Can\'t load data for property: %s::%s', __CLASS__, $name));
+        // return the data
+        return $data;
     }
 
     /**
