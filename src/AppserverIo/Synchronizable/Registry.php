@@ -1,7 +1,7 @@
 <?php
 
 /**
- * AppserverIo\Synchronizable\ObjectTest
+ * AppserverIo\Synchronizable\Registry
  *
  * NOTICE OF LICENSE
  *
