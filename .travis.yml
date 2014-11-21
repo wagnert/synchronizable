@@ -2,8 +2,10 @@ language: php
 
 php:
   - 5.4
+  - 5.5
   
 before_install:
+  - echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - pecl install xdebug
   - pyrus install pear/PHP_CodeSniffer
   - phpenv rehash
