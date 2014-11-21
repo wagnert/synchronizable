@@ -37,13 +37,6 @@ class Registry
 {
 
     /**
-     * Contains the reference counters for all synchronizable instances.
-     *
-     * @var array
-     */
-    public static $instances = array();
-
-    /**
      * Creates a new synchronizable instance, attaches it to the registry and returns it.
      *
      * @param string $className The class name of the synchronizable to create
@@ -78,7 +71,7 @@ class Registry
     }
 
     /**
-     * Ddeattaches the passed synchronizable instance from the registry, destroys it, and
+     * Deattaches the passed synchronizable instance from the registry, destroys it, and
      * deletes all data from the APCu if no more instances are registered.
      *
      * @param \AppserverIo\Synchronizable\SynchronizableInterface $synchronizable The instance to be destroyed
@@ -99,7 +92,7 @@ class Registry
         unset($synchronizable);
 
         // check if we've to destroy the data here
-        if (Registry::$instances[$serial] === 0 && Registry::hasData($serial)) {
+        if (apc_exists($serial) && apc_fetch($serial) === 0 && Registry::hasData($serial)) {
             $iterator = new \ApcIterator('user', '/^' . $serial . '\./');
             foreach ($iterator as $key => $value) {
                 if (apc_delete($key) === false) {
@@ -120,8 +113,8 @@ class Registry
     {
 
         // return the reference count if we know the serial
-        if (isset(Registry::$instances[$serial])) {
-            return Registry::$instances[$serial];
+        if (apc_exists($serial)) {
+            return apc_fetch($serial);
         }
 
         // else return 0
@@ -156,12 +149,12 @@ class Registry
         $serial = $synchronizable->__serial();
 
         // check if the instance has already been registered
-        if (isset(Registry::$instances[$serial])) {
-            return Registry::$instances[$serial]++;
+        if (apc_exists($serial) === false) {
+            apc_store($serial, 0);
         }
 
         // if not, regster it with a reference count of 1
-        return Registry::$instances[$serial] = 1;
+        return apc_inc($serial);
     }
 
     /**
@@ -180,16 +173,16 @@ class Registry
         $serial = $synchronizable->__serial();
 
         // synchronizable is NOT registered
-        if (isset(Registry::$instances[$serial]) === false) {
+        if (apc_exists($serial) === false) {
             throw new \Exception(sprintf('Can\'t detach synchronizable %s (%s), because it has no reference count', get_class($synchronizable), $serial));
         }
 
         // detach the synchronizable instance if possible
-        if (($refCount = Registry::$instances[$serial]) < 1) {
+        if (($refCount = apc_fetch($serial)) < 1) {
             throw new \Exception(sprintf('Can\'t detach synchronizable %s (%s), because reference count %d < 1', get_class($synchronizable), $serial, $refCount));
         }
 
         // detach the synchronizable instance and return the reference counter
-        return Registry::$instances[$serial]--;
+        return apc_dec($serial);
     }
 }

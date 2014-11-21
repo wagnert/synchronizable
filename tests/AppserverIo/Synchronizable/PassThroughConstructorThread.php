@@ -46,7 +46,6 @@ class PassThroughConstructorThread extends \Thread
     {
         $this->object = $object;
         $this->mutex = $mutex;
-        echo "Object reference counter in Thread::__construct(): " . $this->object->__refCount() . PHP_EOL;
     }
 
     /**
@@ -56,7 +55,8 @@ class PassThroughConstructorThread extends \Thread
      */
     public function run()
     {
-        $this->object->__copy();
-        echo "Object reference counter in Thread::run(): " . $this->object->__refCount() . PHP_EOL;
+        // copy the object and destroy it
+        $object = $this->object->__copy();
+        $object->__destroy();
     }
 }

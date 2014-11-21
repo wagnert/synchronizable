@@ -51,7 +51,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     protected function setUp()
     {
-        apc_clear_cache(); // clear the APCu cache
         $this->object = new Object();
     }
 
@@ -87,18 +86,22 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         // create a reference
         $reference = $this->object->__copy();
+
         $this->assertSame($reference, $this->object);
 
         // set a value
         $this->object->value = 10;
 
-        // destroy the instance
-        $this->object->__destroy();
-
         // check the object status
         $this->assertSame(10, $reference->value);
-        $this->assertSame(1, Registry::refCount($reference));
+        $this->assertSame(2, Registry::refCount($reference));
         $this->assertTrue(Registry::hasData($reference->__serial()));
+
+        // destroy the reference
+        $reference->__destroy();
+
+        // make sure the reference count has been decreased
+        $this->assertSame(1, Registry::refCount($this->object));
     }
 
     /**
@@ -135,21 +138,29 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(Registry::hasData($this->object->__serial()));
     }
 
+    /**
+     * Test object destruction when passing to a threads constructor.
+     *
+     * @return void
+     */
     public function testPassThroughThreadConstructor()
     {
 
         // set the counter to ZERO
         $this->object->counter = 0;
 
-        echo "Object reference counter on start ObjectTest::testPassThroughThreadConstructor: " . $this->object->__refCount() . PHP_EOL;
+        // check the reference counter
+        $this->assertSame(1, Registry::refCount($this->object));
 
         // initialize the mutex
         $mutex = \Mutex::create();
 
+        // execute the thread
         $thread = new PassThroughConstructorThread($this->object, $mutex);
         $thread->start();
         $thread->join();
 
-        echo "Object reference counter on end ObjectTest::testPassThroughThreadConstructor: " . $this->object->__refCount() . PHP_EOL;
+        // check the reference counter
+        $this->assertSame(1, Registry::refCount($this->object));
     }
 }

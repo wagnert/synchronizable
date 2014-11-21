@@ -51,30 +51,7 @@ class ArrayObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
-        apc_clear_cache(); // clear the APCu cache
         $this->arrayObject = new ArrayObject();
-    }
-
-    /**
-     * Cleans up before the the next test case will be invoked.
-     *
-     * @return void
-     * @see PHPUnit_Framework_TestCase::tearDown()
-     */
-    protected function tearDown()
-    {
-
-        // load the serial
-        $serial = $this->arrayObject->__serial();
-
-        // destroy the object
-        Registry::destroy($this->arrayObject);
-
-        // load the iterator for the object properties
-        $iterator = new \ApcIterator('user', '/^' . $serial . '\./');
-
-        // make sure that memory has been cleaned up
-        $this->assertSame(0, $iterator->getTotalCount());
     }
 
     /**
