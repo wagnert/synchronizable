@@ -1,7 +1,7 @@
 <?php
 
 /**
- * AppserverIo\Synchronizable\RaiseCounterThread
+ * AppserverIo\Synchronizable\PassThroughConstructorThread
  *
  * NOTICE OF LICENSE
  *
@@ -33,7 +33,7 @@ namespace AppserverIo\Synchronizable;
  * @link      http://github.com/appserver-io/synchronizable
  * @link      http://www.appserver.io
  */
-class RaiseCounterThread extends \Thread
+class PassThroughConstructorThread extends \Thread
 {
 
     /**
@@ -46,21 +46,17 @@ class RaiseCounterThread extends \Thread
     {
         $this->object = $object;
         $this->mutex = $mutex;
+        echo "Object reference counter in Thread::__construct(): " . $this->object->__refCount() . PHP_EOL;
     }
 
     /**
-     * Raise the counter inside the thread context.
+     * Copy the object to the threads context.
      *
      * @return void
      */
     public function run()
     {
-
-        // raise the counter by 1 till 5000
-        for ($i = 0; $i < 5000; $i++) {
-            \Mutex::lock($this->mutex);
-            $this->object->counter++;
-            \Mutex::unlock($this->mutex);
-        }
+        $this->object->__copy();
+        echo "Object reference counter in Thread::run(): " . $this->object->__refCount() . PHP_EOL;
     }
 }

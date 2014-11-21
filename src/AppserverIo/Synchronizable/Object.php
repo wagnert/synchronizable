@@ -44,13 +44,6 @@ class Object implements SynchronizableInterface
     protected $serial;
 
     /**
-     * A counter how many references on the object have been created.
-     *
-     * @var integer
-     */
-    protected $refCount = 0;
-
-    /**
      * Constructor that'll initialize the synchronizable object.
      *
      * @throws \Exception Is thrown if either APCu has not been loaded or the initialization data can't be written to APCu
@@ -65,7 +58,9 @@ class Object implements SynchronizableInterface
 
         // initialize the serial and the reference counter
         $this->serial = uniqid();
-        $this->refCount++;
+
+        // register the synchronizable
+        Registry::attach($this);
     }
 
     /**
@@ -76,15 +71,7 @@ class Object implements SynchronizableInterface
      */
     public function __destruct()
     {
-        $this->refCount--; // we destroy a copy here
-        if ($this->refCount === 0) {
-            $iterator = new \ApcIterator('user', '/^' . $this->serial . '\./');
-            foreach ($iterator as $key => $value) {
-                if (apc_delete($key) === false) {
-                    throw new \Exception('Can\'t delete property for %s::%s (%s) instance', get_class($this), $key, $this->serial);
-                }
-            }
-        }
+        Registry::destroy($this);
     }
 
     /**
@@ -104,7 +91,7 @@ class Object implements SynchronizableInterface
      */
     public function __refCount()
     {
-        return $this->refCount;
+        return Registry::refCount($this);
     }
 
     /**
@@ -136,14 +123,14 @@ class Object implements SynchronizableInterface
 
         // try to load the data from APCu
         $rawData = apc_fetch($this->serial . '.' . $name);
-        if ($rawData === false) { // throw an exception if data can't be loaded from APCu
-            throw new \Exception(sprintf('Can\'t load data for property: %s::%s', __CLASS__, $name));
+        if ($rawData === false) { // throw an exception if property is not set or data can't be resolve
+            throw new \Exception(sprintf('Undefined property: %s::%s', __CLASS__, $name));
         }
 
         // unserialize data and check if property is set
         $data = unserialize($rawData);
-        if ($data === false) { // throw an exception if property is not set or data can't be resolve
-            throw new \Exception(sprintf('Undefined property: %s::%s', __CLASS__, $name));
+        if ($data === false) { // throw an exception if data can't be loaded from APCu
+            throw new \Exception(sprintf('Can\'t load data for property: %s::%s', __CLASS__, $name));
         }
 
         // return the data
@@ -158,7 +145,7 @@ class Object implements SynchronizableInterface
      */
     public function __wakeup()
     {
-        $this->refCount++;
+        Registry::attach($this);
     }
 
     /**
@@ -168,6 +155,27 @@ class Object implements SynchronizableInterface
      */
     public function __sleep()
     {
-        return array('serial', 'refCount');
+        return array('serial');
+    }
+
+    /**
+     * Destroys the instance and detaches it from the registry.
+     *
+     * @return void
+     */
+    public function __destroy()
+    {
+        Registry::destroy($this);
+    }
+
+    /**
+     * Attaches the instance to the registry again and returns it.
+     *
+     * @return \AppserverIo\Synchronizable\SynchronizableInterface The instance itself
+     */
+    public function __copy()
+    {
+        Registry::attach($this);
+        return $this;
     }
 }

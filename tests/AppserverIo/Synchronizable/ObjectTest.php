@@ -56,28 +56,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Cleans up before the the next test case will be invoked.
-     *
-     * @return void
-     * @see PHPUnit_Framework_TestCase::tearDown()
-     */
-    protected function tearDown()
-    {
-
-        // load the serial
-        $serial = $this->object->__serial();
-
-        // unset the object
-        unset($this->object);
-
-        // load the iterator for the object properties
-        $iterator = new \ApcIterator('user', '/^' . $serial . '\./');
-
-        // make sure that memory has been cleaned up
-        $this->assertSame(0, $iterator->getTotalCount());
-    }
-
-    /**
      * Assigning a property to an object.
      *
      * @return void
@@ -100,15 +78,36 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Test to create a reference.
+     *
+     * @return void
+     */
+    public function testCreateReference()
+    {
+
+        // create a reference
+        $reference = $this->object->__copy();
+        $this->assertSame($reference, $this->object);
+
+        // set a value
+        $this->object->value = 10;
+
+        // destroy the instance
+        $this->object->__destroy();
+
+        // check the object status
+        $this->assertSame(10, $reference->value);
+        $this->assertSame(1, Registry::refCount($reference));
+        $this->assertTrue(Registry::hasData($reference->__serial()));
+    }
+
+    /**
      * Tests synchronization by using a mutex.
      *
      * @return void
      */
     public function testSynchronizeCounterWithMutex()
     {
-
-        // this test is actually NOT working because refCount is not handled correctly
-        $this->markTestIncomplete('Object refCount has wrong size');
 
         // set the counter to ZERO
         $this->object->counter = 0;
@@ -130,7 +129,27 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             $threads[$i]->join();
         }
 
-        // check the counter
+        // check the object status
         $this->assertSame(10000, $this->object->counter);
+        $this->assertSame(1, Registry::refCount($this->object));
+        $this->assertTrue(Registry::hasData($this->object->__serial()));
+    }
+
+    public function testPassThroughThreadConstructor()
+    {
+
+        // set the counter to ZERO
+        $this->object->counter = 0;
+
+        echo "Object reference counter on start ObjectTest::testPassThroughThreadConstructor: " . $this->object->__refCount() . PHP_EOL;
+
+        // initialize the mutex
+        $mutex = \Mutex::create();
+
+        $thread = new PassThroughConstructorThread($this->object, $mutex);
+        $thread->start();
+        $thread->join();
+
+        echo "Object reference counter on end ObjectTest::testPassThroughThreadConstructor: " . $this->object->__refCount() . PHP_EOL;
     }
 }

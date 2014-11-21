@@ -51,6 +51,7 @@ class ArrayObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
+        apc_clear_cache(); // clear the APCu cache
         $this->arrayObject = new ArrayObject();
     }
 
@@ -66,8 +67,8 @@ class ArrayObjectTest extends \PHPUnit_Framework_TestCase
         // load the serial
         $serial = $this->arrayObject->__serial();
 
-        // unset the object
-        unset($this->arrayObject);
+        // destroy the object
+        Registry::destroy($this->arrayObject);
 
         // load the iterator for the object properties
         $iterator = new \ApcIterator('user', '/^' . $serial . '\./');
