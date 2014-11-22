@@ -96,7 +96,9 @@ class Registry
             $iterator = new \ApcIterator('user', '/^' . $serial . '\./');
             foreach ($iterator as $key => $value) {
                 if (apc_delete($key) === false) {
-                    throw new \RuntimeException('Can\'t delete property for %s::%s (%s) instance', get_class($synchronizable), $key, $serial);
+                    throw new \RuntimeException(
+                        sprintf('Can\'t delete property for %s::%s (%s) instance', get_class($synchronizable), $key, $serial)
+                    );
                 }
             }
         }
