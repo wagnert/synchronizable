@@ -1,11 +1,12 @@
 language: php
 
 php:
-  - 5.5
   - 5.4
+  - 5.5
   
 before_install:
-  - pecl install apc
+  - yes | pecl install -f apcu
+  - echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ; true
   - pecl install pthreads-1.0.1
   - pecl install xdebug
   - pyrus install pear/PHP_CodeSniffer

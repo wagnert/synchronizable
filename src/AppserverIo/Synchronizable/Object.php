@@ -1,7 +1,7 @@
 <?php
 
 /**
- * AppserverIo\Synchronizable\ObjectTest
+ * AppserverIo\Synchronizable\Object
  *
  * NOTICE OF LICENSE
  *
@@ -46,14 +46,14 @@ class Object implements SynchronizableInterface
     /**
      * Constructor that'll initialize the synchronizable object.
      *
-     * @throws \Exception Is thrown if either APCu has not been loaded or the initialization data can't be written to APCu
+     * @throws \RuntimeException Is thrown if either APCu has not been loaded or the initialization data can't be written to APCu
      */
     public function __construct()
     {
 
         // actually we're using APCu to store the object properties
         if (extension_loaded('apc') === false) {
-            throw new \Exception('PHP Extension APCu has to be loaded');
+            throw new \RuntimeException('PHP Extension APCu has to be loaded');
         }
 
         // initialize the serial and the reference counter
@@ -116,7 +116,8 @@ class Object implements SynchronizableInterface
      * @param string $name The name of the property the value has to be returned
      *
      * @return mixed The value of the undefined property
-     * @throws \Exception Is thrown if the property has not been initialized before someone tries to access it
+     * @throws \OutOfBoundsException Is thrown if the property has not been initialized before someone tries to access it
+     * @throws \RuntimeException     Is thrown if the data is available, be can't be loaded from datasource
      */
     public function __get($name)
     {
@@ -124,13 +125,13 @@ class Object implements SynchronizableInterface
         // try to load the data from APCu
         $rawData = apc_fetch($this->serial . '.' . $name);
         if ($rawData === false) { // throw an exception if property is not set or data can't be resolve
-            throw new \Exception(sprintf('Undefined property: %s::%s', __CLASS__, $name));
+            throw new \OutOfBoundsException(sprintf('Undefined property: %s::%s', __CLASS__, $name));
         }
 
         // unserialize data and check if property is set
         $data = unserialize($rawData);
         if ($data === false) { // throw an exception if data can't be loaded from APCu
-            throw new \Exception(sprintf('Can\'t load data for property: %s::%s', __CLASS__, $name));
+            throw new \RuntimeException(sprintf('Can\'t load data for property: %s::%s', __CLASS__, $name));
         }
 
         // return the data

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * AppserverIo\Synchronizable\ObjectTest
+ * AppserverIo\Synchronizable\Registry
  *
  * NOTICE OF LICENSE
  *
@@ -77,7 +77,7 @@ class Registry
      * @param \AppserverIo\Synchronizable\SynchronizableInterface $synchronizable The instance to be destroyed
      *
      * @return void
-     * @throws \Exception Is thrown if the data can't be deleted from APCu
+     * @throws \RuntimeException Is thrown if the data can't be deleted from APCu
      */
     public static function destroy(SynchronizableInterface $synchronizable)
     {
@@ -96,7 +96,7 @@ class Registry
             $iterator = new \ApcIterator('user', '/^' . $serial . '\./');
             foreach ($iterator as $key => $value) {
                 if (apc_delete($key) === false) {
-                    throw new \Exception('Can\'t delete property for %s::%s (%s) instance', get_class($synchronizable), $key, $serial);
+                    throw new \RuntimeException('Can\'t delete property for %s::%s (%s) instance', get_class($synchronizable), $key, $serial);
                 }
             }
         }
@@ -164,7 +164,8 @@ class Registry
      * @param \AppserverIo\Synchronizable\SynchronizableInterface $synchronizable The synchronizable instance to return the reference count for
      *
      * @return integer The reference counter for the instance
-     * @throws \Exception Is thrown if the instance can't be detached
+     * @throws \OutOfBoundsException Is thrown if the instance has no reference count
+     * @throws \UnexpectedValueException Is thrown if the reference counter is already 0 and can't be decreased
      */
     public static function detach(SynchronizableInterface $synchronizable)
     {
@@ -174,12 +175,12 @@ class Registry
 
         // synchronizable is NOT registered
         if (apc_exists($serial) === false) {
-            throw new \Exception(sprintf('Can\'t detach synchronizable %s (%s), because it has no reference count', get_class($synchronizable), $serial));
+            throw new \OutOfBoundsException(sprintf('Can\'t detach synchronizable %s (%s), because it has no reference count', get_class($synchronizable), $serial));
         }
 
         // detach the synchronizable instance if possible
         if (($refCount = apc_fetch($serial)) < 1) {
-            throw new \Exception(sprintf('Can\'t detach synchronizable %s (%s), because reference count %d < 1', get_class($synchronizable), $serial, $refCount));
+            throw new \UnexpectedValueException(sprintf('Can\'t detach synchronizable %s (%s), because reference count %d < 1', get_class($synchronizable), $serial, $refCount));
         }
 
         // detach the synchronizable instance and return the reference counter

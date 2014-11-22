@@ -1,11 +1,11 @@
-# logger
+# APCu based object library
 
-[![Latest Stable Version](https://poser.pugx.org/appserver-io/logger/v/stable.png)](https://packagist.org/packages/appserver-io/logger) [![Total Downloads](https://poser.pugx.org/appserver-io/logger/downloads.png)](https://packagist.org/packages/appserver-io/logger) [![Latest Unstable Version](https://poser.pugx.org/appserver-io/logger/v/unstable.png)](https://packagist.org/packages/appserver-io/logger) [![License](https://poser.pugx.org/appserver-io/logger/license.png)](https://packagist.org/packages/appserver-io/logger) [![Build Status](https://travis-ci.org/appserver-io/logger.png)](https://travis-ci.org/appserver-io/logger)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/appserver-io/logger/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/appserver-io/logger/?branch=master)[![Code Coverage](https://scrutinizer-ci.com/g/appserver-io/logger/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/appserver-io/logger/?branch=master)
+[![Latest Stable Version](https://poser.pugx.org/appserver-io/synchronizable/v/stable.png)](https://packagist.org/packages/appserver-io/synchronizable) [![Total Downloads](https://poser.pugx.org/appserver-io/synchronizable/downloads.png)](https://packagist.org/packages/appserver-io/synchronizable) [![Latest Unstable Version](https://poser.pugx.org/appserver-io/synchronizable/v/unstable.png)](https://packagist.org/packages/appserver-io/synchronizable) [![License](https://poser.pugx.org/appserver-io/synchronizable/license.png)](https://packagist.org/packages/appserver-io/synchronizable) [![Build Status](https://travis-ci.org/appserver-io/synchronizable.png)](https://travis-ci.org/appserver-io/synchronizable)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/appserver-io/synchronizable/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/appserver-io/synchronizable/?branch=master)[![Code Coverage](https://scrutinizer-ci.com/g/appserver-io/synchronizable/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/appserver-io/synchronizable/?branch=master)
 
 ## Introduction
 
-logger provides fully thread-safe and PSR-3 compatible logger implementation.
+Provides a multithreaded, APCu based basic object library.
 
 ## Installation
 
@@ -15,7 +15,7 @@ your application only, you do this by add
 ```sh
 {
     "require": {
-        "appserver-io/logger": "dev-master"
+        "appserver-io/synchronizable": "dev-master"
     },
 }
 ```
