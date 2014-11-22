@@ -6,6 +6,7 @@ php:
   
 before_install:
   - yes | pecl install -f apcu
+  - echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ; true
   - pecl install xdebug
   - pyrus install pear/PHP_CodeSniffer
   - phpenv rehash
