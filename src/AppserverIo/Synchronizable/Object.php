@@ -105,7 +105,7 @@ class Object implements SynchronizableInterface
      */
     public function __set($name, $value)
     {
-        if (apc_store($this->serial . '.' . $name, serialize($value)) === false) { // throw an exception if data can't be stored to APCu
+        if (apc_store($this->serial . '_' . $name, serialize($value)) === false) { // throw an exception if data can't be stored to APCu
             throw new \Exception(sprintf('Can\'t store data for property: %s::%s', __CLASS__, $name));
         }
     }
@@ -123,7 +123,7 @@ class Object implements SynchronizableInterface
     {
 
         // try to load the data from APCu
-        $rawData = apc_fetch($this->serial . '.' . $name);
+        $rawData = apc_fetch($this->serial . '_' . $name);
         if ($rawData === false) { // throw an exception if property is not set or data can't be resolve
             throw new \OutOfBoundsException(sprintf('Undefined property: %s::%s', __CLASS__, $name));
         }
