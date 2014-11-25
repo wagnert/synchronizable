@@ -111,6 +111,33 @@ class Object implements SynchronizableInterface
     }
 
     /**
+     * Queries whether the property with the passed name exists or not.
+     *
+     * @param string $name The property name to query
+     *
+     * @return boolean TRUE if the property exists, else FALSE
+     */
+    public function __exists($name)
+    {
+        return apc_exists($this->serial . '_' . $name);
+    }
+
+    /**
+     * Deletes the property with the passed name.
+     *
+     * @param string $name The property name to query
+     *
+     * @return void
+     * @throws \Exception Is thrown if the property data can't be deleted from APCu
+     */
+    public function __delete($name)
+    {
+        if (apc_delete($this->serial . '_' . $name) === false) { // throw an exception if data can't be deleted from APCu
+            throw new \Exception(sprintf('Can\'t delete data for property: %s::%s', __CLASS__, $name));
+        }
+    }
+
+    /**
      * Invoked when someone tries to read from an undefined property.
      *
      * @param string $name The name of the property the value has to be returned
