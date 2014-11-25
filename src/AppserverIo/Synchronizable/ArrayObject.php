@@ -37,19 +37,6 @@ class ArrayObject extends Object implements \ArrayAccess
 {
 
     /**
-     * Constructor that'll initialize the synchronizable object.
-     */
-    public function __construct()
-    {
-
-        // actually we're using APCu to store the object properties
-        parent::__construct();
-
-        // initialize the property with the items
-        $this->__set('items', array());
-    }
-
-    /**
      * Assigns a value to the specified offset.
      *
      * @param mixed $offset The offset to assign the value to
@@ -62,18 +49,13 @@ class ArrayObject extends Object implements \ArrayAccess
     public function offsetSet($offset, $value)
     {
 
-        // load the property with the items data
-        $data = $this->__get('items');
-
         // add the data depending an offset has been passed or not
         if (is_null($offset)) {
-            $data[] = $value;
-        } else {
-            $data[$offset] = $value;
+            $offset = apc_inc($this->serial);
         }
 
         // store the data back to the property
-        $this->__set('items', $data);
+        $this->__set($offset, $value);
     }
 
     /**
@@ -89,8 +71,7 @@ class ArrayObject extends Object implements \ArrayAccess
      */
     public function offsetExists($offset)
     {
-        $data = $this->__get('items');
-        return isset($data[$offset]);
+        return $this->__exists($offset);
     }
 
     /**
@@ -104,9 +85,7 @@ class ArrayObject extends Object implements \ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        $data = $this->__get('items');
-        unset($data[$offset]);
-        $this->__set('items', $data);
+        $this->__delete($offset);
     }
 
     /**
@@ -122,7 +101,6 @@ class ArrayObject extends Object implements \ArrayAccess
      */
     public function offsetGet($offset)
     {
-        $data = $this->__get('items');
-        return isset($data[$offset]) ? $data[$offset] : null;
+        return $this->__exists($offset) ? $this->__get($offset) : null;
     }
 }
