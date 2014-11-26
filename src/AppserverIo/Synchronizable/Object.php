@@ -44,6 +44,13 @@ class Object implements SynchronizableInterface
     protected $serial;
 
     /**
+     * Information about the class properties.
+     *
+     * @var array
+     */
+    protected $properties = array();
+
+    /**
      * Constructor that'll initialize the synchronizable object.
      *
      * @throws \RuntimeException Is thrown if either APCu has not been loaded or the initialization data can't be written to APCu
@@ -82,6 +89,21 @@ class Object implements SynchronizableInterface
     public function __serial()
     {
         return $this->serial;
+    }
+
+    public function __attach($properties)
+    {
+
+        // set the object properties
+        $this->properties = $properties;
+
+        // check if the instance has already been registered
+        if (apc_exists($this->serial) === false) {
+            apc_store($this->serial, 0);
+        }
+
+        // if not, regster it with a reference count of 1
+        return apc_inc($this->serial);
     }
 
     /**
@@ -183,7 +205,7 @@ class Object implements SynchronizableInterface
      */
     public function __sleep()
     {
-        return array('serial');
+        return array('serial', 'properties');
     }
 
     /**
