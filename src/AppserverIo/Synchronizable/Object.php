@@ -35,6 +35,9 @@ namespace AppserverIo\Synchronizable;
  */
 class Object implements SynchronizableInterface
 {
+    const PROPERTY_VALUE_SCALAR = 0;
+
+    const PROPERTY_VALUE_COMPLEX = 1;
 
     /**
      * The unique object identifier.
@@ -44,7 +47,7 @@ class Object implements SynchronizableInterface
     protected $serial;
 
     /**
-     * Information about the class properties.
+     * Meta information about the class properties.
      *
      * @var array
      */
@@ -91,21 +94,6 @@ class Object implements SynchronizableInterface
         return $this->serial;
     }
 
-    public function __attach($properties)
-    {
-
-        // set the object properties
-        $this->properties = $properties;
-
-        // check if the instance has already been registered
-        if (apc_exists($this->serial) === false) {
-            apc_store($this->serial, 0);
-        }
-
-        // if not, regster it with a reference count of 1
-        return apc_inc($this->serial);
-    }
-
     /**
      * Returns the reference counter.
      *
@@ -127,7 +115,27 @@ class Object implements SynchronizableInterface
      */
     public function __set($name, $value)
     {
-        if (apc_store($this->serial . '_' . $name, serialize($value)) === false) { // throw an exception if data can't be stored to APCu
+
+        // mark it as an scalar value
+        if (is_scalar($value)) {
+
+            // mark value as scalar
+            $this->properties[$name] = Object::PROPERTY_VALUE_SCALAR;
+
+        } elseif (is_array($value) || is_object($value)) { // query if we've to store an array or object
+
+            // if yes, serialize it
+            $value = serialize($value);
+
+            // mark value as complex
+            $this->properties[$name] = Object::PROPERTY_VALUE_COMPLEX;
+
+        } else { // we can't store resources in APCu
+            throw new \Exception(sprintf('Can\'t store resource/file data for property: %s::%s', __CLASS__, $name));
+        }
+
+        // store the data in the APCu cache
+        if (apc_store($this->serial . '_' . $name, $value) === false) { // throw an exception if data can't be stored to APCu
             throw new \Exception(sprintf('Can\'t store data for property: %s::%s', __CLASS__, $name));
         }
     }
@@ -177,14 +185,22 @@ class Object implements SynchronizableInterface
             throw new \OutOfBoundsException(sprintf('Undefined property: %s::%s', __CLASS__, $name));
         }
 
-        // unserialize data and check if property is set
-        $data = unserialize($rawData);
-        if ($data === false) { // throw an exception if data can't be loaded from APCu
-            throw new \RuntimeException(sprintf('Can\'t load data for property: %s::%s', __CLASS__, $name));
+        // check if we've to unserialize the data
+        if (isset($this->properties[$name]) && $this->properties[$name] === Object::PROPERTY_VALUE_COMPLEX) {
+
+            // unserialize the data if necessary
+            $data =  unserialize($rawData);
+
+            if ($data === false) { // throw an exception if data can't be loaded from APCu
+                throw new \RuntimeException(sprintf('Can\'t load data for property: %s::%s', __CLASS__, $name));
+            }
+
+            // return unserialized data (objects or arrays)
+            return $data;
         }
 
-        // return the data
-        return $data;
+        // return the raw data (simple data types)
+        return $rawData;
     }
 
     /**

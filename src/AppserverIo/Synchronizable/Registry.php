@@ -147,18 +147,6 @@ class Registry
     public static function attach(SynchronizableInterface $synchronizable)
     {
 
-        /*
-        // we need information about the class properties
-        $reflectionClass = new \ReflectionObject($this);
-        foreach ($reflectionClass->getProperties() as $property) {
-            $propertyName = $property->getName();
-            if ($propertyName !== 'serial' && $propertyName !== 'properties') {
-                $this->properties[$propertyName] = array($property->getModifiers(), $property->getValue());
-                unset($this->$propertyName);
-            }
-        }
-        */
-
         // load the serial
         $serial = $synchronizable->__serial();
 
